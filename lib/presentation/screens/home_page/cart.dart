@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/data_sources/sqlite.dart';
 import '../auth/login/login_imports.dart';
@@ -155,8 +157,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildItemCard(BuildContext context, CartModel item) {
-    (DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!)).inMinutes.remainder(60) >= 1 &&
-            DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!)).inSeconds.remainder(60) >= 0)
+    DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!)).inHours.remainder(60) >= 1
         ? null
         : Future.delayed(const Duration(seconds: 1), () {
             setState(() {
@@ -168,68 +169,61 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      item.product,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                    const SizedBox(
-                      width: 20,
-                    ),
-                    Text(
-                      _formatDuration(DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!))),
-                      style: TextStyle(fontSize: 15, color: MyColors.primaryColor),
-                    ),
-                  ],
-                ),
-                Text(item.description),
-                // Text("₹ ${item.amount.toString()}"),
-              ],
+          SizedBox(
+            width: MediaQuery.of(context).size.width - 100,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: Text(
+                          item.product,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                      ),
+                      Text(
+                        _formatDuration(DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!)))
+                            .toString(),
+                        style: TextStyle(fontSize: 15, color: MyColors.primaryColor),
+                      ),
+                    ],
+                  ),
+                  Text(item.description),
+                  // Text("₹ ${item.amount.toString()}"),
+                ],
+              ),
             ),
           ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (item.id != null) {
-                    cartBloc.add(CartItemDeleteEvent(item.id!, item.userId!));
-                  }
-                },
-                child: const Icon(Icons.delete),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () {
-                  _showEditProductDialog(context, item);
-                },
-                child: const Icon(Icons.edit),
-              ),
-              // const SizedBox(width: 8),
-              // GestureDetector(
-              //   onTap: () {
-              //     final cartItem = CartItemModel(
-              //       userId: item.userId!,
-              //       id: item.id ?? 0,
-              //       product: item.product,
-              //       description: item.description,
-              //       amount: item.amount,
-              //       quantity: 1,
-              //       isSelected: true,
-              //     );
-              //     cartBloc.add(CartItemAddedOnClickedEvent(
-              //         clickedItem: cartItem, userId: widget.userId));
-              //   },
-              //   child: const Icon(Icons.shopping_cart),
-              // ),
-              // const SizedBox(width: 8),
-            ],
+          SizedBox(
+            width: 65,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (item.id != null) {
+                      cartBloc.add(CartItemDeleteEvent(item.id!, item.userId!));
+                    }
+                  },
+                  child: const Icon(Icons.delete),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    _showEditProductDialog(
+                        context,
+                        item,
+                        _formatDuration(DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!)))
+                            .toString());
+                  },
+                  child: const Icon(Icons.edit),
+                ),
+              ],
+            ),
           )
         ],
       ),
@@ -301,7 +295,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _showEditProductDialog(BuildContext context, CartModel item) {
+  void _showEditProductDialog(BuildContext context, CartModel item, String time) {
     TextEditingController productController = TextEditingController(text: item.product);
     TextEditingController descriptionController = TextEditingController(text: item.description);
     TextEditingController amountController = TextEditingController(text: item.amount.toString());
@@ -309,55 +303,74 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit TODO"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: productController,
-                decoration: const InputDecoration(hintText: 'Title'),
+        return StatefulBuilder(builder: (context, newState) {
+          DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!)).inHours.remainder(60) >= 1
+              ? null
+              : Future.delayed(const Duration(seconds: 1), () {
+                  newState(() {
+                    time;
+                  });
+                });
+          return AlertDialog(
+            title: const Text("Edit TODO"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: productController,
+                  decoration: const InputDecoration(hintText: 'Title'),
+                ),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(hintText: 'Description'),
+                ),
+              ],
+            ),
+            actions: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('TODO running', style: TextStyle(fontSize: 15, color: Colors.amber)),
+                  Text(
+                      _formatDuration(DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(item.createdAt!))).toString(),
+                      style: TextStyle(fontSize: 15, color: MyColors.primaryColor)),
+                ],
               ),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(hintText: 'Description'),
-              ),
-              // TextField(
-              //   controller: amountController,
-              //   decoration: const InputDecoration(hintText: 'Amount'),
-              // ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                final updatedItem = CartModel(
-                  id: item.id,
-                  product: productController.text,
-                  description: descriptionController.text,
-                  amount: double.tryParse(amountController.text) ?? 0.0,
-                );
-                cartBloc.add(
-                  CartItemUpdateEvent(
-                    userId: item.userId!,
-                    id: item.id!,
-                    product: updatedItem.product,
-                    description: updatedItem.description,
-                    amount: updatedItem.amount,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      final updatedItem = CartModel(
+                        id: item.id,
+                        product: productController.text,
+                        description: descriptionController.text,
+                        amount: double.tryParse(amountController.text) ?? 0.0,
+                      );
+                      cartBloc.add(
+                        CartItemUpdateEvent(
+                          userId: item.userId!,
+                          id: item.id!,
+                          product: updatedItem.product,
+                          description: updatedItem.description,
+                          amount: updatedItem.amount,
+                        ),
+                      );
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Save'),
                   ),
-                );
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            ],
+          );
+        });
       },
     );
   }
